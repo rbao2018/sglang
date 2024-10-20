@@ -135,7 +135,62 @@ class LlamaForSequenceClassificationWithNormal_Weights(LlamaForSequenceClassific
                 LlamaForCausalLM.load_weights(self, [(name, loaded_weight)])
 
 
+class LlamaForProcessRewardModel(LlamaForSequenceClassification):
+    class Weights(torch.nn.Module):
+        def __init__(self, hidden_size, num_label):
+            super().__init__()
+            self.fc = torch.nn.Sequential(
+                torch.nn.Linear(hidden_size, hidden_size, dtype=torch.float16),
+                torch.nn.SELU(),
+                torch.nn.Linear(hidden_size, hidden_size, dtype=torch.float16),
+                torch.nn.SELU(),
+                torch.nn.Linear(hidden_size, num_label // 2, dtype=torch.float16),
+            )
+
+        def forward(self, x):
+            return self.fc(x.to(torch.float16))
+
+    def __init__(
+        self,
+        config: LlamaConfig,
+        quant_config: Optional[QuantizationConfig] = None,
+        cache_config=None,
+    ) -> None:
+        super().__init__(config, quant_config, cache_config)
+        self.weights = self.Weights(config.hidden_size, self.num_labels)
+
+    @torch.no_grad()
+    def forward(
+        self,
+        input_ids: torch.Tensor,
+        positions: torch.Tensor,
+        forward_batch: ForwardBatch,
+        input_embeds: torch.Tensor = None,
+        get_embedding: bool = True,
+    ) -> EmbeddingPoolerOutput:
+        assert (
+            get_embedding
+        ), "LlamaForSequenceClassification is only used for embedding"
+        hidden_states = self.model(input_ids, positions, forward_batch, input_embeds)
+        scores = self.score(hidden_states)
+        
+        return self.pooler(scores, forward_batch)
+
+    def load_weights(self, weights: Iterable[Tuple[str, torch.Tensor]]):
+        params_dict = dict(self.named_parameters())
+
+        for name, loaded_weight in weights:
+            if "score" in name:
+                param = params_dict[name]
+                weight_loader = getattr(param, "weight_loader", default_weight_loader)
+                weight_loader(param, loaded_weight)
+            elif "lm_head" in name:
+                continue
+            else:
+                LlamaForCausalLM.load_weights(self, [(name, loaded_weight)])
+                
 EntryClass = [
     LlamaForSequenceClassification,
     LlamaForSequenceClassificationWithNormal_Weights,
+    LlamaForProcessRewardModel
 ]
