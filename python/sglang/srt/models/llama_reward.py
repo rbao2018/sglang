@@ -42,7 +42,7 @@ class LlamaForSequenceClassification(nn.Module):
         self.model = LlamaModel(config, quant_config=quant_config)
         self.score = nn.Linear(config.hidden_size, self.num_labels, bias=False)
         self.pooler = Pooler(pooling_type=PoolingType.LAST, normalize=False)
-
+        self.reward_token_id = getattr(config, "reward_token_id", None)
         self.eos_token_id = config.eos_token_id
 
     @torch.no_grad()
@@ -62,7 +62,7 @@ class LlamaForSequenceClassification(nn.Module):
         params_dict = dict(self.named_parameters())
 
         for name, loaded_weight in weights:
-            if "classification_head" in name:
+            if "score" in name:
                 param = params_dict[name]
                 weight_loader = getattr(param, "weight_loader", default_weight_loader)
                 weight_loader(param, loaded_weight)
@@ -125,7 +125,7 @@ class LlamaForSequenceClassificationWithNormal_Weights(LlamaForSequenceClassific
         params_dict = dict(self.named_parameters())
 
         for name, loaded_weight in weights:
-            if "classification_head" in name:
+            if "score" in name:
                 param = params_dict[name]
                 weight_loader = getattr(param, "weight_loader", default_weight_loader)
                 weight_loader(param, loaded_weight)

@@ -681,7 +681,7 @@ def v1_generate_response(request, ret, tokenizer_manager, to_file=False):
         )
         completion_tokens = [item["meta_info"]["completion_tokens"] for item in ret]
         completion_tokens_sum = sum(completion_tokens)
-        response = CompletionResponse(
+        response = ChatCompletionResponse(
             id=ret[0]["meta_info"]["id"],
             model=request.model,
             choices=choices,
