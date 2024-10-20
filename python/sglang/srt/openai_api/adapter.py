@@ -679,15 +679,16 @@ def v1_generate_response(request, ret, tokenizer_manager, to_file=False):
         prompt_tokens = sum(
             ret[i]["meta_info"]["prompt_tokens"] for i in range(0, len(ret), request.n)
         )
-        completion_tokens = sum(item["meta_info"]["completion_tokens"] for item in ret)
+        completion_tokens = [item["meta_info"]["completion_tokens"] for item in ret]
+        completion_tokens_sum = sum(completion_tokens)
         response = CompletionResponse(
             id=ret[0]["meta_info"]["id"],
             model=request.model,
             choices=choices,
             usage=UsageInfo(
                 prompt_tokens=prompt_tokens,
-                completion_tokens=completion_tokens,
-                total_tokens=prompt_tokens + completion_tokens,
+                completion_tokens=completion_tokens_sum,
+                total_tokens=[x + prompt_tokens for x in completion_tokens]
             ),
         )
     return response
@@ -1081,19 +1082,18 @@ def v1_chat_generate_response(request, ret, to_file=False, cache_report=False):
         prompt_tokens = sum(
             ret[i]["meta_info"]["prompt_tokens"] for i in range(0, len(ret), request.n)
         )
-        completion_tokens = sum(item["meta_info"]["completion_tokens"] for item in ret)
+        completion_tokens = [item["meta_info"]["completion_tokens"] for item in ret]
         cached_tokens = sum(item["meta_info"].get("cached_tokens", 0) for item in ret)
-        response = ChatCompletionResponse(
+        completion_tokens_sum = sum(completion_tokens)
+        response = CompletionResponse(
             id=ret[0]["meta_info"]["id"],
             model=request.model,
             choices=choices,
             usage=UsageInfo(
                 prompt_tokens=prompt_tokens,
-                completion_tokens=completion_tokens,
-                total_tokens=prompt_tokens + completion_tokens,
-                prompt_tokens_details=(
-                    {"cached_tokens": cached_tokens} if cache_report else None
-                ),
+                completion_tokens=completion_tokens_sum,
+                total_tokens=[x + prompt_tokens for x in completion_tokens],
+                prompt_tokens_details=({"cached_tokens": cached_tokens} if cache_report else None)
             ),
         )
         return response

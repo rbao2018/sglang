@@ -74,7 +74,7 @@ class ChoiceLogprobs(BaseModel):
 
 class UsageInfo(BaseModel):
     prompt_tokens: int = 0
-    total_tokens: int = 0
+    total_tokens: Optional[Union[int, List[int]]] = 0
     completion_tokens: Optional[int] = 0
     # only used to return cached tokens when --enable-cache-report is set
     prompt_tokens_details: Optional[Dict[str, int]] = None
