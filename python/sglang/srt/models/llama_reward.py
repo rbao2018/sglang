@@ -62,7 +62,7 @@ class LlamaForSequenceClassification(nn.Module):
         params_dict = dict(self.named_parameters())
 
         for name, loaded_weight in weights:
-            if "score" in name:
+            if "classification_head" in name:
                 param = params_dict[name]
                 weight_loader = getattr(param, "weight_loader", default_weight_loader)
                 weight_loader(param, loaded_weight)
@@ -125,7 +125,7 @@ class LlamaForSequenceClassificationWithNormal_Weights(LlamaForSequenceClassific
         params_dict = dict(self.named_parameters())
 
         for name, loaded_weight in weights:
-            if "score" in name:
+            if "classification_head" in name:
                 param = params_dict[name]
                 weight_loader = getattr(param, "weight_loader", default_weight_loader)
                 weight_loader(param, loaded_weight)
