@@ -1085,7 +1085,7 @@ def v1_chat_generate_response(request, ret, to_file=False, cache_report=False):
         completion_tokens = [item["meta_info"]["completion_tokens"] for item in ret]
         cached_tokens = sum(item["meta_info"].get("cached_tokens", 0) for item in ret)
         completion_tokens_sum = sum(completion_tokens)
-        response = CompletionResponse(
+        response = ChatCompletionResponse(
             id=ret[0]["meta_info"]["id"],
             model=request.model,
             choices=choices,
